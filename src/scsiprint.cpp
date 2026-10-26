@@ -345,7 +345,7 @@ skip_subpages:
                     gSeagateFactoryLPage = true;
                 break;
             case SEAGATE_FARM_LPAGE:
-                if (scsiIsSeagate(scsi_vendor)) {
+                if (scsiIsSeagate(device, scsi_vendor)) {
                     if (SEAGATE_FARM_CURRENT_L_SPAGE == supp_lpg.subpage_code) {
                         gSeagateFarmLPage = true;
                     } else if (SUPP_SPAGE_L_SPAGE != supp_lpg.subpage_code) {
