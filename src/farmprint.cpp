@@ -330,7 +330,10 @@ void ataPrintFarmLog(const ataFarmLog& farmLog) {
   jout("\t\tSeek Error Rate (SMART Attr 7 Normalized): %" PRIi64 "\n", farmLog.reliability.attrSeekErrorRateNormal);
   jout("\t\tSeek Error Rate (SMART Attr 7 Worst): %" PRIi64 "\n", farmLog.reliability.attrSeekErrorRateWorst);
   jout("\t\tHigh Priority Unload Events: %" PRIu64 "\n", farmLog.reliability.attrUnloadEventsRaw);
-  jout("\t\tHelium Pressure Threshold Tripped: %" PRIu64 "\n", farmLog.reliability.heliumPresureTrip);
+  const bool format = (((farmLog.reliability.heliumPresureTrip & UINT64_C(0x00FF000000000000)) >> 48) & UINT64_C(1)) != 0;
+  const uint64_t value = farmLog.reliability.heliumPresureTrip & UINT64_C(0x0000FFFFFFFFFFFF);
+  const uint64_t heliumPressureTripped = format ? ((value != 1) ? 0 : value) : value;
+  jout("\t\tHelium Pressure Threshold Tripped: %" PRIu64 "\n", heliumPressureTripped);
   jout("\t\tLBAs Corrected By Parity Sector: %" PRIi64 "\n", farmLog.reliability.numberLBACorrectedParitySector);
 
   // Page 5 by-head reliability parameters
@@ -488,7 +491,7 @@ void ataPrintFarmLog(const ataFarmLog& farmLog) {
   jref5["seek_error_rate_normalized"] = farmLog.reliability.attrSeekErrorRateNormal;
   jref5["seek_error_rate_worst"] = farmLog.reliability.attrSeekErrorRateWorst;
   jref5["high_priority_unload_events"] = farmLog.reliability.attrUnloadEventsRaw;
-  jref5["helium_presure_trip"] = farmLog.reliability.heliumPresureTrip;
+  jref5["helium_presure_trip"] = heliumPressureTripped;
   jref5["lbas_corrected_by_parity_sector"] = farmLog.reliability.numberLBACorrectedParitySector;
 
   // Page 5: Reliability Statistics By Head
@@ -628,7 +631,10 @@ void scsiPrintFarmLog(const scsiFarmLog& farmLog) {
 
   // Parameter 5: Reliability Statistics
   jout("\tFARM Log Parameter 5: Reliability Statistics\n");
-  jout("\t\tHelium Pressure Threshold Tripped: %" PRIi64 "\n", farmLog.reliability.heliumPresureTrip);
+  const bool format = (((farmLog.reliability.heliumPresureTrip & UINT64_C(0x00FF000000000000)) >> 48) & UINT64_C(1)) != 0;
+  const uint64_t value = farmLog.reliability.heliumPresureTrip & UINT64_C(0x0000FFFFFFFFFFFF);
+  const uint64_t heliumPressureTripped = format ? ((value != 1) ? 0 : value) : value;
+  jout("\t\tHelium Pressure Threshold Tripped: %" PRIu64 "\n", heliumPressureTripped);
 
   // Parameter 6: Drive Information Continued
   jout("\tFARM Log Parameter 6: Drive Information Continued\n");
@@ -798,7 +804,7 @@ void scsiPrintFarmLog(const scsiFarmLog& farmLog) {
   json::ref jref5 = jref["reliability_statistics"];
 //jref5["number_of_raw_operations"] = farmLog.reliability.xxxxxx;
 //jref5["cumulative_lifetime_ecc_due_to_erc"] = farmLog.reliability.xxxxxx;
-  jref5["helium_pressure_threshold_tripped"] = farmLog.reliability.heliumPresureTrip;
+  jref5["helium_pressure_threshold_tripped"] = heliumPressureTripped;
 
   // Parameter 6: Drive Information Continued
   json::ref jref6 = jref["drive_information_continued"];
