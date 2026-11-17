@@ -21,6 +21,7 @@
 
 namespace smartmon {
 
+constexpr uint32_t SEAGATE_IEEEOUI = 0x000C50;
 /////////////////////////////////////////////////////////////////////////////////////////
 // Seagate ATA Field Access Reliability Metrics (FARM) log (Log 0xA6)
 
@@ -40,6 +41,14 @@ bool ataIsSeagate(const ata_identify_device& drive, const drive_settings* dbentr
   if (regular_expression("^ST[0-9]{3,5}[A-Z]{2}[A-Z0-9]{3,5}(-.*)?$").full_match(model)) {
     return true;
   }
+
+  uint32_t ieeeOUI = 0;
+  uint64_t unique_id = 0;
+  int naa = ata_get_wwn(drive, ieeeOUI, unique_id);
+  if (naa >= 0 && ieeeOUI == SEAGATE_IEEEOUI) {
+    return true;
+  }
+
   return false;
 }
 
@@ -140,13 +149,46 @@ bool ataReadFarmLog(ata_device* device, ataFarmLog& farmLog, unsigned nsectors) 
 /*
  *  Determines whether the current drive is a SCSI Seagate drive
  *
- *  @param  scsi_vendor:  Text of SCSI vendor field (char*)
+ *  @param  device: Pointer to instantiated device object (scsi_device*)
+ *  @param  scsi_vendor:  Text of SCSI vendor field (const char*)
  *  @return True if the drive is a Seagate drive, false otherwise (bool)
  */
-bool scsiIsSeagate(char* scsi_vendor) {
-  return (0 == memcmp(scsi_vendor, "SEAGATE", strlen("SEAGATE")));
-}
+bool scsiIsSeagate(scsi_device *device, const char *scsi_vendor)
+{
+  if (0 == memcmp(scsi_vendor, "SEAGATE", strlen("SEAGATE"))) {
+    return true;
+  }
 
+  uint8_t b[252]{};
+  if (0 == scsiInquiryVpd(device, SCSI_VPD_DEVICE_IDENTIFICATION, b, sizeof(b))) {
+    int page_len = (b[2] << 8) | b[3];
+    if (page_len > static_cast<int>(sizeof(b) - 4))
+      page_len = sizeof(b) - 4;
+    int off = -1;
+    while (0 == scsi_vpd_dev_id_iter(b + 4, page_len, &off, 0, 3, 1))
+    {
+      const unsigned char *designator = b + 4 + off;
+      if ((designator[3] < 1) || (off + designator[3] + 4 > page_len))
+        continue;
+      const unsigned char *naa = designator + 4;
+      int naa_type = (naa[0] >> 4) & 0xf;
+
+      if ((((2 == naa_type) || (5 == naa_type)) && (8 == designator[3])) ||
+          ((6 == naa_type) && (16 == designator[3])))
+      {
+        uint32_t ieeeOUI = ((uint32_t)(naa[0] & 0xf) << 20) |
+                            ((uint32_t)naa[1] << 12) |
+                            ((uint32_t)naa[2] << 4) |
+                            ((uint32_t)naa[3] >> 4);
+        if (ieeeOUI == SEAGATE_IEEEOUI) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
 /*
  *  Reads vendor-specific FARM log (SCSI log page 0x3D, sub-page 0x3) data from Seagate
  *  drives and parses data into FARM log structures

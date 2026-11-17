@@ -692,10 +692,11 @@ bool ataReadFarmLog(ata_device* device, ataFarmLog& farmLog, unsigned nsectors);
 /*
  *  Determines whether the current drive is a SCSI Seagate drive
  *
+ *  @param  device: Pointer to instantiated device object (scsi_device*)
  *  @param  scsi_vendor:  Text of SCSI vendor field (char*)
  *  @return True if the drive is a Seagate drive, false otherwise (bool)
  */
-bool scsiIsSeagate(char* scsi_vendor);
+  bool scsiIsSeagate(scsi_device *device, const char *scsi_vendor);
 
 /*
  *  Reads vendor-specific FARM log (SCSI log page 0x3D, sub-page 0x3) data from Seagate
