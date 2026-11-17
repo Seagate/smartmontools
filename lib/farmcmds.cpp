@@ -21,7 +21,7 @@
 
 namespace smartmon {
 
-#define SEAGATE_IEEEOUI 0x000C50
+constexpr uint32_t SEAGATE_IEEEOUI = 0x000C50;
 /////////////////////////////////////////////////////////////////////////////////////////
 // Seagate ATA Field Access Reliability Metrics (FARM) log (Log 0xA6)
 
@@ -149,16 +149,17 @@ bool ataReadFarmLog(ata_device* device, ataFarmLog& farmLog, unsigned nsectors) 
 /*
  *  Determines whether the current drive is a SCSI Seagate drive
  *
- *  @param  scsi_vendor:  Text of SCSI vendor field (char*)
+ *  @param  device: Pointer to instantiated device object (scsi_device*)
+ *  @param  scsi_vendor:  Text of SCSI vendor field (const char*)
  *  @return True if the drive is a Seagate drive, false otherwise (bool)
  */
-bool scsiIsSeagate(scsi_device *device, char *scsi_vendor)
+bool scsiIsSeagate(scsi_device *device, const char *scsi_vendor)
 {
   if (0 == memcmp(scsi_vendor, "SEAGATE", strlen("SEAGATE"))) {
     return true;
   }
 
-  unsigned char b[252] = {};
+  uint8_t b[252]{};
   if (0 == scsiInquiryVpd(device, SCSI_VPD_DEVICE_IDENTIFICATION, b, sizeof(b))) {
     int page_len = (b[2] << 8) | b[3];
     if (page_len > static_cast<int>(sizeof(b) - 4))

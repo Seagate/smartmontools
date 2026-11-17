@@ -345,7 +345,9 @@ skip_subpages:
                     gSeagateFactoryLPage = true;
                 break;
             case SEAGATE_FARM_LPAGE:
-                if (scsiIsSeagate(device, scsi_vendor)) {
+                if ((scsi_version >= SCSI_VERSION_SPC_4) &&
+                    (scsi_version <= SCSI_VERSION_HIGHEST) &&
+                    scsiIsSeagate(device, scsi_vendor)) { /* Seagate FARM is supported for SPC-4 and later devices. */
                     if (SEAGATE_FARM_CURRENT_L_SPAGE == supp_lpg.subpage_code) {
                         gSeagateFarmLPage = true;
                     } else if (SUPP_SPAGE_L_SPAGE != supp_lpg.subpage_code) {
